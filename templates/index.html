@@ -14,8 +14,6 @@
     <canvas id="humedadChart"></canvas>
 
     <script>
-        const data = {{ data|tojson }};
-
         function createChart(canvasId, label, dataset, color) {
             new Chart(document.getElementById(canvasId), {
                 type: 'line',
