@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard LoRa</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Visualización de Sensores LoRa</h2>
+
+    <canvas id="voltajeChart"></canvas>
+    <canvas id="lumensChart"></canvas>
+    <canvas id="distanciaChart"></canvas>
+    <canvas id="temperaturaChart"></canvas>
+    <canvas id="humedadChart"></canvas>
+
+    <script>
+        const timestamps = {{ timestamps|tojson }};
+        const data = {{ data|tojson }};
+
+        function createChart(canvasId, label, dataset, color) {
+            new Chart(document.getElementById(canvasId), {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: label,
+                        data: dataset,
+                        borderColor: color,
+                        fill: false
+                    }]
+                }
+            });
+        }
+
+        createChart("voltajeChart", "Voltaje (V)", data.voltaje, "red");
+        createChart("lumensChart", "Lumens", data.lumens, "orange");
+        createChart("distanciaChart", "Distancia (cm)", data.distancia, "blue");
+        createChart("temperaturaChart", "Temperatura (°C)", data.temperatura, "green");
+        createChart("humedadChart", "Humedad (%)", data.humedad, "purple");
+    </script>
+</body>
+</html>
