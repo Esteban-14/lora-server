@@ -29,6 +29,11 @@
             position: relative;
             height: 400px;
         }
+        button {
+            margin-right: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -65,13 +70,11 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: false,
+                plugins: {
+                    legend: { display: false }
+                },
                 scales: {
                     y: { beginAtZero: true }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
                 }
             }
         });
@@ -101,7 +104,7 @@
                 let html = '';
                 for (let i = 1; i <= 5; i++) {
                     const valor = datos[i].valor;
-                    html += `<div>Sensor ${i}: ${valor !== null ? valor : 'Vacío'}</div>`;
+                    html += `<div>Dispositivo ${i}: ${valor !== null ? valor : 'Vacío'}</div>`;
                 }
                 document.getElementById('estado-nodos').innerHTML = html;
 
