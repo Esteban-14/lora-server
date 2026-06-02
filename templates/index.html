@@ -38,6 +38,7 @@
         <div class="info">
             <h3>Estado de Conexiones</h3>
             <div id="estado-nodos">Cargando...</div>
+            <button onclick="resetearTodo()">Vaciar gráfica</button>
         </div>
 
         <div class="info" id="grafica-contenedor">
@@ -47,21 +48,78 @@
 
     <script>
         const ctx = document.getElementById('miGrafica').getContext('2d');
+
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['A', 'B', 'C'],
+                labels: [],
                 datasets: [
-                    { label: 'LoRa 1', data: [1, 2, 3], borderColor: '#ff6384' }
+                    { label: '', data: [], borderColor: '#ff6384', fill: false },
+                    { label: '', data: [], borderColor: '#36a2eb', fill: false },
+                    { label: '', data: [], borderColor: '#ffcd56', fill: false },
+                    { label: '', data: [], borderColor: '#4bc0c0', fill: false },
+                    { label: '', data: [], borderColor: '#9966ff', fill: false }
                 ]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
             }
         });
 
-        document.getElementById('estado-nodos').innerHTML = 'Página cargada correctamente';
+        async function actualizar() {
+            try {
+                const res = await fetch('/api/datos');
+                const datos = await res.json();
+
+                const ahora = new Date().toLocaleTimeString();
+                chart.data.labels.push(ahora);
+
+                for (let i = 1; i <= 5; i++) {
+                    const valor = datos[i].valor;
+                    chart.data.datasets[i - 1].data.push(valor !== null ? valor : null);
+                }
+
+                if (chart.data.labels.length > 20) {
+                    chart.data.labels.shift();
+                    chart.data.datasets.forEach(ds => {
+                        if (ds.data.length > 20) ds.data.shift();
+                    });
+                }
+
+                chart.update();
+
+                let html = '';
+                for (let i = 1; i <= 5; i++) {
+                    const valor = datos[i].valor;
+                    html += `<div>Sensor ${i}: ${valor !== null ? valor : 'Vacío'}</div>`;
+                }
+                document.getElementById('estado-nodos').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('estado-nodos').innerHTML = 'Error conectando con el servidor';
+            }
+        }
+
+        async function resetearTodo() {
+            await fetch('/api/reset', { method: 'POST' });
+            chart.data.labels = [];
+            chart.data.datasets.forEach(ds => ds.data = []);
+            chart.update();
+            actualizar();
+        }
+
+        actualizar();
+        setInterval(actualizar, 2000);
     </script>
 </body>
 </html>
