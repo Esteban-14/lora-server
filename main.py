@@ -16,7 +16,7 @@ def obtener_datos():
 
 @app.route('/api/actualizar', methods=['POST'])
 def actualizar_dato():
-    data = request.json
+    data = request.json or {}
     id_lora = data.get('id')
     valor = data.get('valor')
 
@@ -26,6 +26,13 @@ def actualizar_dato():
         return jsonify({"status": "ok"}), 200
 
     return jsonify({"status": "error"}), 400
+
+@app.route('/api/reset', methods=['POST'])
+def reset_datos():
+    for i in range(1, 6):
+        datos_lora[i]["valor"] = None
+        datos_lora[i]["timestamp"] = None
+    return jsonify({"status": "reseteado"}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
