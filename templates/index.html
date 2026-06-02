@@ -1,39 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Dashboard LoRa</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización de Sensores LoRa</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .info {
+            background: white;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .connected {
+            background: #4caf50;
+        }
+        .disconnected {
+            background: #f44336;
+        }
+        #grafica-contenedor {
+            height: 400px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Visualización de Sensores LoRa</h2>
+    <div class="container">
+        <h1>📡 Visualización de Sensores LoRa</h1>
 
-    <canvas id="voltajeChart"></canvas>
-    <canvas id="lumensChart"></canvas>
-    <canvas id="distanciaChart"></canvas>
-    <canvas id="temperaturaChart"></canvas>
-    <canvas id="humedadChart"></canvas>
+        <div class="info">
+            <h3>Estado de Conexiones</h3>
+            <div id="estado-nodos">Cargando...</div>
+        </div>
+
+        <div class="info" id="grafica-contenedor">
+            <canvas id="miGrafica"></canvas>
+        </div>
+    </div>
 
     <script>
-        function createChart(canvasId, label, dataset, color) {
-            new Chart(document.getElementById(canvasId), {
-                type: 'line',
-                data: {
-                    labels: timestamps,
-                    datasets: [{
-                        label: label,
-                        data: dataset,
-                        borderColor: color,
-                        fill: false
-                    }]
+        const ctx = document.getElementById('miGrafica').getContext('2d');
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'LoRa 1', data: [], borderColor: '#ff6384', fill: false },
+                    { label: 'LoRa 2', data: [], borderColor: '#36a2eb', fill: false },
+                    { label: 'LoRa 3', data: [], borderColor: '#ffcd56', fill: false },
+                    { label: 'LoRa 4', data: [], borderColor: '#4bc0c0', fill: false },
+                    { label: 'LoRa 5', data: [], borderColor: '#9966ff', fill: false }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    y: { beginAtZero: true }
                 }
-            });
+            }
+        });
+
+        async function actualizar() {
+            try {
+                const res = await fetch('/api/datos');
+                const datos = await res.json();
+
+                const ahora = new Date().toLocaleTimeString();
+                chart.data.labels.push(ahora);
+
+                for (let i = 1; i <= 5; i++) {
+                    const valor = datos[i].valor;
+                    chart.data.datasets[i - 1].data.push(valor !== null ? valor : null);
+                }
+
+                if (chart.data.labels.length > 20) {
+                    chart.data.labels.shift();
+                    chart.data.datasets.forEach(ds => {
+                        if (ds.data.length > 20) ds.data.shift();
+                    });
+                }
+
+                chart.update();
+
+                let html = '';
+                for (let i = 1; i <= 5; i++) {
+                    const valor = datos[i].valor;
+                    const timestamp = datos[i].timestamp;
+                    const estado = valor !== null ? 'connected' : 'disconnected';
+                    html += `<div><span class="status ${estado}"></span>LoRa ${i}: ${valor !== null ? valor + ' (' + timestamp + ')' : 'Desconectado'}</div>`;
+                }
+                document.getElementById('estado-nodos').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('estado-nodos').innerHTML = 'Error conectando con el servidor';
+                console.log(error);
+            }
         }
 
-        createChart("voltajeChart", "Voltaje (V)", data.voltaje, "red");
-        createChart("lumensChart", "Lumens", data.lumens, "orange");
-        createChart("distanciaChart", "Distancia (cm)", data.distancia, "blue");
-        createChart("temperaturaChart", "Temperatura (°C)", data.temperatura, "green");
-        createChart("humedadChart", "Humedad (%)", data.humedad, "purple");
+        actualizar();
+        setInterval(actualizar, 2000);
     </script>
 </body>
 </html>
