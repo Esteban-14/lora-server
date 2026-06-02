@@ -6,6 +6,14 @@ app = Flask(__name__)
 
 datos_lora = {i: {"valor": None, "timestamp": None} for i in range(1, 6)}
 
+DISPOSITIVOS_AUTORIZADOS = {
+    "ESP-LORA-1": 1,
+    "ESP-LORA-2": 2,
+    "ESP-LORA-3": 3,
+    "ESP-LORA-4": 4,
+    "ESP-LORA-5": 5,
+}
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -16,16 +24,25 @@ def obtener_datos():
 
 @app.route('/api/actualizar', methods=['POST'])
 def actualizar_dato():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
+
+    device_key = data.get('device_key')
     id_lora = data.get('id')
     valor = data.get('valor')
 
-    if id_lora in datos_lora and valor is not None:
-        datos_lora[id_lora]["valor"] = valor
-        datos_lora[id_lora]["timestamp"] = datetime.now().isoformat()
-        return jsonify({"status": "ok"}), 200
+    if device_key not in DISPOSITIVOS_AUTORIZADOS:
+        return jsonify({"status": "error", "message": "dispositivo no autorizado"}), 403
 
-    return jsonify({"status": "error"}), 400
+    if DISPOSITIVOS_AUTORIZADOS[device_key] != id_lora:
+        return jsonify({"status": "error", "message": "id no coincide con la clave"}), 400
+
+    if valor is None:
+        return jsonify({"status": "error", "message": "valor requerido"}), 400
+
+    datos_lora[id_lora]["valor"] = valor
+    datos_lora[id_lora]["timestamp"] = datetime.now().isoformat()
+
+    return jsonify({"status": "ok"}), 200
 
 @app.route('/api/reset', methods=['POST'])
 def reset_datos():
